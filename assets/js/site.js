@@ -21,7 +21,7 @@
   // Reduced motion (or Lenis failed to load): native scroll, no inertia, no parallax.
   if (reduce || typeof Lenis === 'undefined') return;
 
-  var lenis = new Lenis({
+  window.__lenis = new Lenis({
     duration: 1.1,
     easing: function (t) { return 1 - Math.pow(1 - t, 4); },
     smoothWheel: true,
@@ -29,10 +29,10 @@
     touchMultiplier: 1.2
   });
 
-  lenis.on('scroll', updateParallax);
+  window.__lenis.on('scroll', updateParallax);
 
   function raf(time) {
-    lenis.raf(time);
+    window.__lenis.raf(time);
     requestAnimationFrame(raf);
   }
   requestAnimationFrame(raf);
@@ -45,7 +45,7 @@
       var target = document.getElementById(href.slice(1));
       if (!target) return;
       e.preventDefault();
-      lenis.scrollTo(target, { offset: -20 });
+      window.__lenis.scrollTo(target, { offset: -20 });
     });
   }
 })();
