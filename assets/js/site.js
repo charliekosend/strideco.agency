@@ -3,9 +3,7 @@
 
   var parallaxTargets = [];
   var heroGrid = document.getElementById('hero-grid');
-  var founderImg = document.getElementById('founder-photo-img');
   if (heroGrid) parallaxTargets.push({ el: heroGrid, factor: 0.05, max: 40 });
-  if (founderImg) parallaxTargets.push({ el: founderImg, factor: 0.08, max: 14 });
 
   function updateParallax() {
     for (var i = 0; i < parallaxTargets.length; i++) {
