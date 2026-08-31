@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://charliekosend.github.io/strideco.agency/sitemap.xml
+Sitemap: https://strideco.agency/sitemap.xml
