@@ -68,11 +68,12 @@ document.addEventListener('DOMContentLoaded', function () {
   //    (.ml-form-successBody) is present in the DOM from the start and made
   //    visible via a class/style change on submit — it is NOT a newly inserted
   //    element — so this has to watch attribute mutations, not just childList.
-  //    Observing document.documentElement rather than document.body: this
-  //    script runs at DOMContentLoaded, before the page's own bundler has
-  //    unpacked and mounted the real content, so a reference to document.body
-  //    captured here can be stale by the time the bundler replaces it —
-  //    <html> is never replaced, so the subtree observation survives that.
+  //    Observing `document` itself, not document.documentElement: this
+  //    site's own loader (see the bundler script earlier in this file) runs
+  //    `document.documentElement.replaceWith(...)` to swap in the real page
+  //    right after this script's DOMContentLoaded handler fires, which
+  //    orphans any reference to the old <html>/<body> captured before that.
+  //    `document` is never replaced, so it's the only stable observe root.
   var leadFired = false;
   function isVisible(el) { return !!el && el.offsetParent !== null; }
   new MutationObserver(function () {
@@ -82,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
       leadFired = true;
       track('generate_lead', { form_name: 'book_a_call' });
     }
-  }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+  }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
 });
   </script>
 </head>
