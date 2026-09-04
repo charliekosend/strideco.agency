@@ -37,6 +37,7 @@
 
   var anchorLinks = document.querySelectorAll('a[href^="#"]');
   for (var i = 0; i < anchorLinks.length; i++) {
+    if (anchorLinks[i].hasAttribute('data-open-book-a-call')) continue; // handled by booking-modal.js instead
     anchorLinks[i].addEventListener('click', function (e) {
       var href = this.getAttribute('href');
       if (!href || href.length < 2) return;
