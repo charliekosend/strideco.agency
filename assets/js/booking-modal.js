@@ -16,14 +16,14 @@
   renders its "Interest" dropdown into this form, hide it from the visitor
   and pre-set its value instead of asking them to choose (used on pages
   where the visitor already self-selected by clicking through to a specific
-  offer). Set INTEREST_FIELD_SELECT_NAME / INTEREST_FIELD_PRESET_VALUE
-  below once the real MailerLite field name + option value are confirmed —
-  until then this is a no-op.
+  offer). Confirmed live against the real form: field name is
+  fields[interest], with options "Participant Acquisition", "Retention",
+  "Brand Infrastructure" (no "not sure yet" option exists on the field yet).
 */
 (function () {
   // TODO: fill in once the "Interest" field is added to the MailerLite
   // form and its real generated field name + option values are known.
-  var INTEREST_FIELD_SELECT_NAME = null; // e.g. 'fields[interest]'
+  var INTEREST_FIELD_SELECT_NAME = 'fields[interest]';
   var INTEREST_FIELD_PRESET_VALUE = 'Retention';
 
   var dialog = document.getElementById('booking-dialog');
