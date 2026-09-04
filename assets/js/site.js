@@ -32,26 +32,23 @@
   // Lenis resets scroll to 0 on init, silently undoing the browser's native
   // jump-to-anchor when a page loads with a #hash in the URL (e.g. a link
   // from another page like /#about) -- so it has to be handled explicitly.
-  // This has to poll rather than just wait for `load`: Lenis recomputes its
-  // internal scroll limit via a ResizeObserver, whose callback fires on its
-  // own queued cycle -- not synchronously with `load` or any single rAF --
-  // so a scrollTo for a target below the fold can still silently clamp to
-  // nowhere even after the page is fully loaded, intermittently, depending
-  // on exactly when that callback lands relative to our own scrollTo call.
+  // Verified live: Lenis's internal scroll limit is never recalculated on
+  // its own after construction -- calling .resize() is what makes it
+  // recompute from the current (fully laid out) document height. Without
+  // an explicit call, `limit` stays at its stale initial value indefinitely
+  // and scrollTo silently clamps to nowhere for any below-the-fold target.
   if (window.location.hash) {
     var hashTarget = document.getElementById(window.location.hash.slice(1));
     if (hashTarget) {
-      var hashScrollTries = 0;
-      var tryHashScroll = function () {
-        hashScrollTries++;
-        var targetY = hashTarget.getBoundingClientRect().top + window.scrollY - 20;
-        if (window.__lenis.limit >= targetY || hashScrollTries > 40) {
-          window.__lenis.scrollTo(hashTarget, { offset: -20, immediate: true });
-        } else {
-          setTimeout(tryHashScroll, 50);
-        }
+      var scrollToHash = function () {
+        window.__lenis.resize();
+        window.__lenis.scrollTo(hashTarget, { offset: -20, immediate: true });
       };
-      tryHashScroll();
+      if (document.readyState === 'complete') {
+        scrollToHash();
+      } else {
+        window.addEventListener('load', scrollToHash);
+      }
     }
   }
 
