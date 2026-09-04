@@ -1,4 +1,13 @@
 (function () {
+  // This script's tag ends up executed twice per page load (confirmed live:
+  // one network fetch, but its top-level code runs twice, producing two
+  // independent Lenis instances that raced each other for scroll control —
+  // that's what made hash-anchor scrolling intermittently fail). Root cause
+  // is in the site's page-bundler script-recreation step, not fixable here,
+  // so this guards against it directly instead.
+  if (window.__siteJsInitialized) return;
+  window.__siteJsInitialized = true;
+
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var parallaxTargets = [];
@@ -28,50 +37,24 @@
   });
 
   window.__lenis.on('scroll', updateParallax);
-  window.__lenis.on('scroll', function (e) {
-    console.log('[hash-scroll] scroll event, scrollY', window.scrollY, 'at', performance.now().toFixed(0) + 'ms');
-  });
 
   // Lenis resets scroll to 0 on init, silently undoing the browser's native
   // jump-to-anchor when a page loads with a #hash in the URL (e.g. a link
   // from another page like /#about) -- so it has to be handled explicitly.
-  // This remains intermittently flaky even after `load` plus an explicit
-  // .resize() call (verified live, repeatedly) -- something about this
-  // page's load order still occasionally leaves Lenis's scroll limit stale
-  // at the moment scrollTo runs, for reasons that didn't resolve with any
-  // single fixed timing point tried so far. Rather than guess another exact
-  // moment, this verifies the scroll actually landed and retries with a
-  // fresh resize() if it didn't, up to a few attempts.
+  // Also calls .resize() first: Lenis's internal scroll limit doesn't
+  // recompute on its own after construction, so without this a scrollTo for
+  // a below-the-fold target silently clamps to nowhere.
   if (window.location.hash) {
     var hashTarget = document.getElementById(window.location.hash.slice(1));
     if (hashTarget) {
-      var hashScrollAttempts = 0;
       var scrollToHash = function () {
-        hashScrollAttempts++;
         window.__lenis.resize();
         window.__lenis.scrollTo(hashTarget, { offset: -20, immediate: true });
-        setTimeout(function () {
-          // getBoundingClientRect().top is already viewport-relative (i.e.
-          // already accounts for current scroll), so a correct landing
-          // means this is ~20 (matching the -20 offset) -- NOT ~0 and NOT
-          // adding window.scrollY again, which is what an earlier version
-          // of this check mistakenly did, making it never actually verify
-          // anything.
-          var landedAt = hashTarget.getBoundingClientRect().top;
-          console.log('[hash-scroll] attempt', hashScrollAttempts, 'landedAt', landedAt, 'lenisLimit', window.__lenis.limit, 'scrollY', window.scrollY);
-          if (Math.abs(landedAt - 20) > 40 && hashScrollAttempts < 10) {
-            scrollToHash();
-          }
-        }, 120);
       };
-      console.log('[hash-scroll] hash', window.location.hash, 'readyState', document.readyState);
       if (document.readyState === 'complete') {
         scrollToHash();
       } else {
-        window.addEventListener('load', function () {
-          console.log('[hash-scroll] load event fired, lenisLimit', window.__lenis.limit);
-          scrollToHash();
-        });
+        window.addEventListener('load', scrollToHash);
       }
     }
   }
