@@ -28,6 +28,9 @@
   });
 
   window.__lenis.on('scroll', updateParallax);
+  window.__lenis.on('scroll', function (e) {
+    console.log('[hash-scroll] scroll event, scrollY', window.scrollY, 'at', performance.now().toFixed(0) + 'ms');
+  });
 
   // Lenis resets scroll to 0 on init, silently undoing the browser's native
   // jump-to-anchor when a page loads with a #hash in the URL (e.g. a link
