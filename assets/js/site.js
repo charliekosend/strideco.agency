@@ -48,16 +48,27 @@
         window.__lenis.resize();
         window.__lenis.scrollTo(hashTarget, { offset: -20, immediate: true });
         setTimeout(function () {
-          var targetY = hashTarget.getBoundingClientRect().top + window.scrollY - 20;
-          if (Math.abs(targetY) > 40 && hashScrollAttempts < 10) {
+          // getBoundingClientRect().top is already viewport-relative (i.e.
+          // already accounts for current scroll), so a correct landing
+          // means this is ~20 (matching the -20 offset) -- NOT ~0 and NOT
+          // adding window.scrollY again, which is what an earlier version
+          // of this check mistakenly did, making it never actually verify
+          // anything.
+          var landedAt = hashTarget.getBoundingClientRect().top;
+          console.log('[hash-scroll] attempt', hashScrollAttempts, 'landedAt', landedAt, 'lenisLimit', window.__lenis.limit, 'scrollY', window.scrollY);
+          if (Math.abs(landedAt - 20) > 40 && hashScrollAttempts < 10) {
             scrollToHash();
           }
         }, 120);
       };
+      console.log('[hash-scroll] hash', window.location.hash, 'readyState', document.readyState);
       if (document.readyState === 'complete') {
         scrollToHash();
       } else {
-        window.addEventListener('load', scrollToHash);
+        window.addEventListener('load', function () {
+          console.log('[hash-scroll] load event fired, lenisLimit', window.__lenis.limit);
+          scrollToHash();
+        });
       }
     }
   }
