@@ -64,19 +64,21 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // 4. generate_lead — the real conversion. Mark as a Key Event in GA4 Admin once
-  //    it starts showing up. MailerLite swaps in a `.ml-form-successBody` element
-  //    inside #booking-form on a successful submit (confirmed against the polling
-  //    script that already styles it) — watch for that instead of any "Thank you!"
-  //    text, which doesn't exist as a literal heading anywhere on the page.
+  //    it starts showing up. Verified live: MailerLite's success row
+  //    (.ml-form-successBody) is present in the DOM from the start and made
+  //    visible via a class/style change on submit — it is NOT a newly inserted
+  //    element — so this has to watch attribute mutations, not just childList.
   var leadFired = false;
   var observeTarget = document.getElementById('booking-form') || document.body;
+  function isVisible(el) { return !!el && el.offsetParent !== null; }
   new MutationObserver(function () {
     if (leadFired) return;
-    if (document.querySelector('#booking-form .ml-form-successBody')) {
+    var successBody = document.querySelector('#booking-form .ml-form-successBody');
+    if (isVisible(successBody)) {
       leadFired = true;
       track('generate_lead', { form_name: 'book_a_call' });
     }
-  }).observe(observeTarget, { childList: true, subtree: true });
+  }).observe(observeTarget, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
 });
   </script>
 </head>
