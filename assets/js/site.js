@@ -29,6 +29,18 @@
 
   window.__lenis.on('scroll', updateParallax);
 
+  // Lenis resets scroll to 0 on init, silently undoing the browser's native
+  // jump-to-anchor when a page loads with a #hash in the URL (e.g. a link
+  // from another page like /#about) -- so it has to be handled explicitly.
+  if (window.location.hash) {
+    var hashTarget = document.getElementById(window.location.hash.slice(1));
+    if (hashTarget) {
+      requestAnimationFrame(function () {
+        window.__lenis.scrollTo(hashTarget, { offset: -20, immediate: true });
+      });
+    }
+  }
+
   function raf(time) {
     window.__lenis.raf(time);
     requestAnimationFrame(raf);
