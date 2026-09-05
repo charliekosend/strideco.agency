@@ -8,6 +8,28 @@
   if (window.__siteJsInitialized) return;
   window.__siteJsInitialized = true;
 
+  // Mobile nav: hamburger toggle for the About/Retention System links that
+  // get hidden inline below 640px. Independent of Lenis/reduced-motion, so
+  // this runs before that early-return below.
+  var menuToggle = document.getElementById('mobile-menu-toggle');
+  var menuPanel = document.getElementById('mobile-menu-panel');
+  if (menuToggle && menuPanel) {
+    menuToggle.addEventListener('click', function () {
+      var isOpen = menuPanel.classList.toggle('mobile-menu-open');
+      menuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+    var closeMenu = function () {
+      menuPanel.classList.remove('mobile-menu-open');
+      menuToggle.setAttribute('aria-expanded', 'false');
+    };
+    menuPanel.querySelectorAll('a').forEach(function (a) {
+      a.addEventListener('click', closeMenu);
+    });
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 640) closeMenu();
+    });
+  }
+
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var parallaxTargets = [];
