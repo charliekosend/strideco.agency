@@ -63,8 +63,25 @@
   var tries = 0;
   var btnDone = false;
   var interestDone = false;
+  var fallbackShown = false;
   var iv = setInterval(function () {
     tries++;
+
+    var formLoaded = !!document.querySelector('#booking-form form');
+    if (!fallbackShown && tries === 25 && !formLoaded) {
+      fallbackShown = true;
+      var fb = document.createElement('div');
+      fb.id = 'booking-form-fallback';
+      fb.style.cssText = "font-family:'Plus Jakarta Sans', sans-serif; font-size:14px; line-height:1.6; color:rgba(8,8,8,.66); padding-top:8px;";
+      fb.innerHTML = "Form not loading? Email us directly at <a href='mailto:contact@strideco.agency' style='color:var(--accent); text-decoration:underline;'>contact@strideco.agency</a> and we will get back to you.";
+      document.getElementById('booking-form').appendChild(fb);
+    }
+    if (fallbackShown && formLoaded) {
+      var oldFb = document.getElementById('booking-form-fallback');
+      if (oldFb) oldFb.remove();
+      fallbackShown = false;
+    }
+
     var wrap = document.querySelector('#booking-form .ml-form-embedWrapper');
     if (wrap) wrap.style.setProperty('background', 'transparent', 'important');
 
