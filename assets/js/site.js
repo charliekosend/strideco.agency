@@ -41,15 +41,29 @@
   // Lenis resets scroll to 0 on init, silently undoing the browser's native
   // jump-to-anchor when a page loads with a #hash in the URL (e.g. a link
   // from another page like /#about) -- so it has to be handled explicitly.
-  // Also calls .resize() first: Lenis's internal scroll limit doesn't
-  // recompute on its own after construction, so without this a scrollTo for
-  // a below-the-fold target silently clamps to nowhere.
+  // Calls .resize() first since Lenis's internal scroll limit doesn't
+  // recompute on its own after construction. Even with that, a single
+  // resize()+scrollTo() at `load` still lands short intermittently for
+  // reasons that didn't resolve with any single fixed timing point tried --
+  // manually calling scrollTo again afterwards always works correctly, so
+  // rather than chase the exact right moment, this verifies the landing and
+  // retries (with a fresh resize()) until it actually lands.
   if (window.location.hash) {
     var hashTarget = document.getElementById(window.location.hash.slice(1));
     if (hashTarget) {
+      var hashScrollAttempts = 0;
       var scrollToHash = function () {
+        hashScrollAttempts++;
         window.__lenis.resize();
         window.__lenis.scrollTo(hashTarget, { offset: -20, immediate: true });
+        setTimeout(function () {
+          // getBoundingClientRect().top is already viewport-relative, so a
+          // correct landing means this is ~20 (matching the -20 offset).
+          var landedAt = hashTarget.getBoundingClientRect().top;
+          if (Math.abs(landedAt - 20) > 40 && hashScrollAttempts < 10) {
+            scrollToHash();
+          }
+        }, 120);
       };
       if (document.readyState === 'complete') {
         scrollToHash();
