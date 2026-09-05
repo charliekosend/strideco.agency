@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!--
+  This is the ad-facing calculator — a quick, self-reported "gut check"
+  tool, NOT the rigorous FLATOUT-style file-matching calculator. Built to
+  be run directly as an ad destination (Instagram/LinkedIn/paid), and
+  deliberately unlinked from the main site nav/homepage.
+
+  Wired to the same MailerLite form (A0w2VT) and GA4 property
+  (G-WPSX42FK14) as the rest of the site — see the JS comments further
+  down for exactly what each integration does.
+-->
+<title>Free Calculator: What's Your Database Worth? | StrideCo</title>
+<meta name="description" content="A 20-second calculator that estimates how much registration revenue is sitting unclaimed in your past participant database.">
+<link rel="canonical" href="https://strideco.agency/retention-calculator/">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="StrideCo">
+<meta property="og:title" content="Free Calculator: What's Your Database Worth?">
+<meta property="og:description" content="A 20-second calculator that estimates how much registration revenue is sitting unclaimed in your past participant database.">
+<meta property="og:url" content="https://strideco.agency/retention-calculator/">
+<meta property="og:image" content="https://strideco.agency/assets/images/charlie-smith-founder.webp">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Free Calculator: What's Your Database Worth?">
+<meta name="twitter:description" content="A 20-second calculator that estimates how much registration revenue is sitting unclaimed in your past participant database.">
+<meta name="twitter:image" content="https://strideco.agency/assets/images/charlie-smith-founder.webp">
+
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg-dark:#080808;
+    --accent:#22c997;
+    --white:#ffffff;
+    --white-muted:rgba(255,255,255,.72);
+    --white-faint:rgba(255,255,255,.5);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background:var(--bg-dark);
+    color:var(--white);
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+  }
+  h1,h2{font-family:'Red Hat Display', system-ui, sans-serif;}
+
+  header{
+    padding:20px 24px;
+    text-align:center;
+  }
+  .logo{
+    color:var(--white);
+    font-family:'Red Hat Display', sans-serif;
+    font-weight:800;
+    font-size:18px;
+    text-decoration:none;
+  }
+
+  main{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .card{
+    max-width:520px;
+    width:100%;
+    text-align:center;
+  }
+  .step{display:none;}
+  .step.active{display:block;}
+
+  .eyebrow{
+    color:var(--accent);
+    font-weight:600;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    font-size:13px;
+    margin-bottom:16px;
+  }
+  h1{
+    font-weight:800;
+    font-size:clamp(26px,5vw,36px);
+    line-height:1.2;
+    margin-bottom:16px;
+  }
+  .step p{
+    color:var(--white-muted);
+    font-size:16px;
+    margin-bottom:32px;
+  }
+  .hint{
+    color:var(--white-faint);
+    font-size:13px;
+    margin-top:12px;
+    display:block;
+  }
+
+  input[type="number"], input[type="email"]{
+    width:100%;
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.2);
+    border-radius:6px;
+    padding:16px;
+    font-size:20px;
+    color:var(--white);
+    font-family:'Plus Jakarta Sans', sans-serif;
+    text-align:center;
+    margin-bottom:8px;
+  }
+  input::placeholder{color:var(--white-faint);}
+  input:focus{outline:2px solid var(--accent); border-color:transparent;}
+
+  input[type="range"]{
+    width:100%;
+    accent-color:var(--accent);
+    margin:24px 0 8px;
+  }
+  .slider-value{
+    font-family:'Red Hat Display', sans-serif;
+    font-weight:800;
+    font-size:48px;
+    color:var(--accent);
+    margin-bottom:8px;
+  }
+  .slider-labels{
+    display:flex;
+    justify-content:space-between;
+    color:var(--white-faint);
+    font-size:13px;
+    margin-bottom:24px;
+  }
+
+  .btn{
+    display:inline-block;
+    background:var(--accent);
+    color:#080808;
+    font-weight:600;
+    text-decoration:none;
+    padding:14px 28px;
+    border-radius:4px;
+    font-size:16px;
+    border:none;
+    cursor:pointer;
+    font-family:'Plus Jakarta Sans', sans-serif;
+    width:100%;
+    margin-top:16px;
+  }
+  .btn:hover{opacity:.9;}
+  .btn:disabled{opacity:.4; cursor:not-allowed;}
+  .btn-secondary{
+    background:transparent;
+    color:var(--white-muted);
+    border:1px solid rgba(255,255,255,.25);
+  }
+
+  /* Reveal screen */
+  .reveal-stat{
+    font-family:'Red Hat Display', sans-serif;
+    font-weight:800;
+    font-size:clamp(20px,4vw,26px);
+    line-height:1.3;
+    margin-bottom:20px;
+  }
+  .reveal-stat .accent{color:var(--accent);}
+  .reveal-body{
+    color:var(--white-muted);
+    font-size:16px;
+    text-align:left;
+    margin-bottom:20px;
+  }
+  .reveal-body strong{color:var(--white);}
+  .footnote{
+    color:var(--white-faint);
+    font-size:13px;
+    font-style:italic;
+    text-align:left;
+    margin-bottom:28px;
+  }
+  .or-divider{
+    color:var(--white-faint);
+    font-size:13px;
+    margin:24px 0 8px;
+  }
+
+  /* Cookie banner — needed here specifically because paid traffic lands
+     directly on this page without ever visiting the homepage first, same
+     reasoning as the Retention System landing page. */
+  .cookie-banner{
+    position:fixed; left:16px; right:16px; bottom:16px; z-index:200;
+    max-width:520px; margin:0 auto;
+    background:var(--bg-dark); color:#fff;
+    border:1px solid rgba(255,255,255,.15);
+    border-radius:6px; box-shadow:4px 4px 0 var(--bg-dark);
+    padding:20px 22px;
+  }
+  .cookie-banner[hidden]{display:none;}
+  .cookie-banner p{
+    font-size:14px; line-height:1.5; color:rgba(255,255,255,.7);
+    margin-bottom:14px;
+  }
+  .cookie-banner-actions{display:flex; gap:10px; justify-content:flex-end;}
+  .cookie-btn{
+    font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:14px;
+    padding:8px 16px; border-radius:4px; cursor:pointer; border:1px solid transparent;
+  }
+  .cookie-btn-decline{background:transparent; color:#fff; border-color:rgba(255,255,255,.3);}
+  .cookie-btn-accept{background:var(--accent); color:#080808;}
+
+  /* Custom progress bar instead of the native <progress> element — browsers
+     apply their own gradient/glow overlays to native progress bars that
+     accent-color can't fully override, so a flat div gives a reliable,
+     exact match to the brand green across all browsers. */
+  .progress-track{
+    width:100%;
+    max-width:520px;
+    margin:0 auto 32px;
+    height:4px;
+    border-radius:2px;
+    overflow:hidden;
+    background:rgba(255,255,255,.15);
+  }
+  .progress-fill{
+    height:100%;
+    width:0%;
+    background:var(--accent);
+    transition:width .3s ease;
+  }
+</style>
+
+<!--
+  Consent-gated GA4 loader — same pattern as the rest of the site
+  (see index.html and the Retention System landing page): checks
+  localStorage['cookie_consent'] and only loads GA4/Clarity once the
+  visitor has accepted. Split into two pieces because this needs to sit
+  in <head> before the cookie banner's markup exists in the DOM:
+  this script only defines functions + checks a stored prior choice, it
+  never touches the DOM directly — the banner's Accept/Decline buttons
+  (added later in body) call window.grantAnalyticsConsent() /
+  window.revokeAnalyticsConsent() once they exist.
+-->
+<script>
+(function () {
+  var GA4_MEASUREMENT_ID = 'G-WPSX42FK14';
+  var CLARITY_PROJECT_ID = 'yaxyb0bels';
+  var CONSENT_KEY = 'cookie_consent';
+
+  function loadTracking() {
+    if (window.__trackingLoaded) return;
+    window.__trackingLoaded = true;
+
+    var gaScript = document.createElement('script');
+    gaScript.async = true;
+    gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA4_MEASUREMENT_ID;
+    document.head.appendChild(gaScript);
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { window.dataLayer.push(arguments); }
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', GA4_MEASUREMENT_ID);
+
+    (function (c, l, a, r, i, t, y) {
+      c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+      t = l.createElement(r); t.async = 1; t.src = 'https://www.clarity.ms/tag/' + i;
+      y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+    })(window, document, 'clarity', 'script', CLARITY_PROJECT_ID);
+  }
+
+  window.grantAnalyticsConsent = function () {
+    localStorage.setItem(CONSENT_KEY, 'accepted');
+    loadTracking();
+  };
+  window.revokeAnalyticsConsent = function () {
+    localStorage.setItem(CONSENT_KEY, 'declined');
+  };
+
+  if (localStorage.getItem(CONSENT_KEY) === 'accepted') {
+    loadTracking();
+  }
+})();
+</script>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/">StrideCo</a>
+</header>
+
+<main>
+  <div class="card">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+
+    <!-- Step 0: Intro -->
+    <div class="step active" data-step="0">
+      <div class="eyebrow">Free 20-Second Calculator</div>
+      <h1>How much is your database actually worth?</h1>
+      <p>Answer 3 quick questions and see roughly how much revenue is sitting in your past participants, unclaimed.</p>
+      <button class="btn" data-next>Start →</button>
+    </div>
+
+    <!-- Step 1: Event size -->
+    <div class="step" data-step="1">
+      <h1>How many people came to your last event?</h1>
+      <input type="number" id="input-attendees" placeholder="e.g. 400" min="1" inputmode="numeric">
+      <button class="btn" data-next data-validate="input-attendees">Next →</button>
+    </div>
+
+    <!-- Step 2: Gut-check slider -->
+    <div class="step" data-step="2">
+      <h1>Out of every 10 of those people, how many do you think had also come to a previous event of yours?</h1>
+      <div class="slider-value" id="slider-display">5</div>
+      <input type="range" id="input-slider" min="0" max="10" value="5" step="1">
+      <div class="slider-labels"><span>0 — none returning</span><span>10 — all returning</span></div>
+      <span class="hint">Just your gut feeling — no need to look anything up.</span>
+      <button class="btn" data-next>Next →</button>
+    </div>
+
+    <!-- Step 3: Ticket price -->
+    <div class="step" data-step="3">
+      <h1>What's your average ticket price?</h1>
+      <input type="number" id="input-price" placeholder="e.g. 45" min="1" inputmode="numeric">
+      <span class="hint" style="margin-bottom:24px;">In £, roughly is fine.</span>
+      <button class="btn" data-next data-validate="input-price">Show me my number →</button>
+    </div>
+
+    <!-- Step 4: Reveal -->
+    <div class="step" data-step="4">
+      <div id="reveal-stat" class="reveal-stat"></div>
+      <div id="reveal-body" class="reveal-body"></div>
+      <div class="footnote">Rough estimate based on the numbers you entered, and a widely-cited retention-vs-acquisition principle — not a full audit. But directionally, it's usually right.</div>
+
+      <a class="btn" id="cta-primary" href="/post-event-retention-system/">Discover how to reclaim it with the Post-Event Retention System →</a>
+
+      <div class="or-divider">Or get this sent to you:</div>
+      <!-- Same MailerLite form (data-form="A0w2VT") the "Book a call" dialog
+           uses elsewhere on the site — reusing it rather than a second
+           integration. It also carries a required "Your name" and an
+           optional "Company" field that this page has no UI for; both are
+           hidden and Name is auto-filled with the email's local part
+           (everything before the @) at submit time, same idea as the
+           Interest field being hidden and preset to "Retention" below. -->
+      <div id="booking-form">
+        <div class="ml-embedded" data-form="A0w2VT"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="cookie-banner" id="cookie-banner" hidden>
+  <p>We use cookies to understand how visitors use this site (analytics via GA4 and Microsoft Clarity). No data is sold. You can decline and still browse normally.</p>
+  <div class="cookie-banner-actions">
+    <button type="button" class="cookie-btn cookie-btn-decline" id="cookie-decline">Decline</button>
+    <button type="button" class="cookie-btn cookie-btn-accept" id="cookie-accept">Accept</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var banner = document.getElementById('cookie-banner');
+  var stored = localStorage.getItem('cookie_consent');
+  if (stored !== 'accepted' && stored !== 'declined') {
+    banner.hidden = false;
+  }
+  document.getElementById('cookie-accept').addEventListener('click', function () {
+    banner.hidden = true;
+    window.grantAnalyticsConsent();
+  });
+  document.getElementById('cookie-decline').addEventListener('click', function () {
+    banner.hidden = true;
+    window.revokeAnalyticsConsent();
+  });
+})();
+</script>
+
+<script>(function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[]).push(arguments);},l=d.createElement(e),l.async=1,l.src=u,n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})(window,document,"script","https://assets.mailerlite.com/js/universal.js","ml");ml("account", "1611723");</script>
+
+<script>
+(function () {
+  var steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
+  var progressFill = document.getElementById('progress-fill');
+  var current = 0;
+
+  function track(eventName, params) {
+    if (localStorage.getItem('cookie_consent') !== 'accepted') return;
+    if (typeof window.gtag !== 'function') return;
+    window.gtag('event', eventName, params || {});
+  }
+
+  function showStep(i) {
+    steps.forEach(function (s) { s.classList.remove('active'); });
+    steps[i].classList.add('active');
+    progressFill.style.width = (i / (steps.length - 1) * 100) + '%';
+    current = i;
+    track('calculator_step', { step: i });
+  }
+  // Fire for the intro step too (it's shown by default via the "active"
+  // class already in the markup, so showStep() is never otherwise called
+  // for step 0) — without this, drop-off from the very first screen is
+  // invisible in GA4.
+  showStep(0);
+
+  document.querySelectorAll('[data-next]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var validateId = btn.getAttribute('data-validate');
+      if (validateId) {
+        var field = document.getElementById(validateId);
+        if (!field.value || Number(field.value) <= 0) {
+          field.focus();
+          return;
+        }
+      }
+      if (current < steps.length - 1) {
+        var next = current + 1;
+        if (steps[next].dataset.step === '4') calculateResult();
+        showStep(next);
+      }
+    });
+  });
+
+  var slider = document.getElementById('input-slider');
+  var sliderDisplay = document.getElementById('slider-display');
+  slider.addEventListener('input', function () {
+    sliderDisplay.textContent = slider.value;
+  });
+
+  function calculateResult() {
+    var attendees = Number(document.getElementById('input-attendees').value) || 0;
+    var sliderVal = Number(slider.value);
+    var price = Number(document.getElementById('input-price').value) || 0;
+
+    var nonReturnFraction = (10 - sliderVal) / 10;
+    var nonReturnPct = Math.round(nonReturnFraction * 100);
+    var unclaimedCount = Math.round(attendees * nonReturnFraction);
+    var revenueLeft = Math.round(unclaimedCount * price);
+
+    var statEl = document.getElementById('reveal-stat');
+    var bodyEl = document.getElementById('reveal-body');
+    var ctaEl = document.getElementById('cta-primary');
+
+    // EDGE CASE: slider at 10 means they claim 100% return already.
+    if (sliderVal === 10) {
+      statEl.innerHTML = 'You\'re already retaining well — most events aren\'t.';
+      bodyEl.innerHTML = '<p>Based on what you told us, your past participants are already coming back. That\'s rare. The Post-Event Retention System exists to make sure it <strong>stays</strong> that way as you grow, rather than slipping once you stop paying attention to it.</p>';
+      ctaEl.textContent = 'See how the Post-Event Retention System keeps it that way →';
+    } else {
+      statEl.innerHTML = 'Roughly <span class="accent">' + nonReturnPct + '%</span> of your past participants aren\'t coming back.';
+      bodyEl.innerHTML =
+        '<p>Based on your numbers, that\'s about <strong>' + unclaimedCount.toLocaleString() + ' people</strong> — worth an estimated <strong>£' + revenueLeft.toLocaleString() + '</strong> in registrations, sitting unclaimed in your database.</p>' +
+        '<p>The ' + unclaimedCount.toLocaleString() + ' people already in your database are the cheapest revenue available anywhere in your business right now.</p>' +
+        '<p><strong>What if we said you could capture that £' + revenueLeft.toLocaleString() + ' for 5–25x less than what it costs to chase brand-new registrations instead?</strong></p>';
+      ctaEl.textContent = 'Discover how to reclaim £' + revenueLeft.toLocaleString() + ' with the Post-Event Retention System →';
+    }
+
+    track('calculator_completed', {
+      attendees: attendees,
+      slider_value: sliderVal,
+      ticket_price: price,
+      revenue_estimate: revenueLeft
+    });
+  }
+
+  // Email capture -> MailerLite. Same form (data-form="A0w2VT") the "Book a call"
+  // dialog uses elsewhere on the site, rendered async by universal.js into
+  // #booking-form. Poll for it the same way booking-modal.js does, then:
+  //   - hide the Interest row and preset it to "Retention" (same pattern as
+  //     the Retention System landing page's booking dialog)
+  //   - hide the Name and Company rows too — this page's UI never collects
+  //     either. Name is required by the form, so it's auto-filled with
+  //     whatever's typed into the email field, up to the @ — kept in sync on
+  //     every keystroke and re-checked right before submit as a safety net
+  //     for autofill/paste.
+  //   - restyle the visible email input + button to match this page's dark
+  //     theme instead of MailerLite's default light form styling.
+  var INTEREST_PRESET = 'Retention';
+  var nameDone = false, companyDone = false, interestDone = false, btnDone = false, wrapDone = false, headerDone = false;
+  var leadFired = false;
+  var tries = 0;
+
+  function syncNameFromEmail() {
+    var emailInput = document.querySelector('#booking-form input[name="fields[email]"]');
+    var nameInput = document.querySelector('#booking-form input[name="fields[name]"]');
+    if (!emailInput || !nameInput) return;
+    nameInput.value = emailInput.value.split('@')[0];
+  }
+
+  function isVisible(el) { return !!el && el.offsetParent !== null; }
+
+  var iv = setInterval(function () {
+    tries++;
+    var wrap = document.querySelector('#booking-form .ml-form-embedWrapper');
+    if (wrap && !wrapDone) {
+      wrap.style.setProperty('background', 'transparent', 'important');
+      wrapDone = true;
+    }
+
+    if (!headerDone) {
+      // The form's own configured title/subtitle ("Book a call" / "Let's
+      // talk about your event.") — wrong context here, this page isn't a
+      // call request.
+      var header = document.querySelector('#booking-form .ml-form-embedContent');
+      if (header) {
+        header.style.setProperty('display', 'none', 'important');
+        headerDone = true;
+      }
+    }
+
+    if (!nameDone) {
+      var nameInput = document.querySelector('#booking-form input[name="fields[name]"]');
+      if (nameInput) {
+        var nameRow = nameInput.closest('.ml-form-fieldRow') || nameInput;
+        nameRow.style.setProperty('display', 'none', 'important');
+        nameDone = true;
+      }
+    }
+    if (!companyDone) {
+      var companyField = document.querySelector('#booking-form textarea[name="fields[company]"]');
+      if (companyField) {
+        var companyRow = companyField.closest('.ml-form-fieldRow') || companyField;
+        companyRow.style.setProperty('display', 'none', 'important');
+        companyDone = true;
+      }
+    }
+    if (!interestDone) {
+      var select = document.querySelector('#booking-form select[name="fields[interest]"]');
+      if (select) {
+        var interestRow = select.closest('.ml-form-fieldRow') || select;
+        interestRow.style.setProperty('display', 'none', 'important');
+        var match = Array.prototype.find.call(select.options, function (o) {
+          return o.textContent.trim() === INTEREST_PRESET;
+        });
+        if (match) select.value = match.value;
+        interestDone = true;
+      }
+    }
+
+    var emailInput = document.querySelector('#booking-form input[name="fields[email]"]');
+    if (emailInput && !emailInput.dataset.styled) {
+      emailInput.dataset.styled = '1';
+      emailInput.style.setProperty('background', 'rgba(255,255,255,.06)', 'important');
+      emailInput.style.setProperty('border', '1px solid rgba(255,255,255,.2)', 'important');
+      emailInput.style.setProperty('border-radius', '6px', 'important');
+      emailInput.style.setProperty('padding', '16px', 'important');
+      emailInput.style.setProperty('font-size', '20px', 'important');
+      emailInput.style.setProperty('color', 'var(--white)', 'important');
+      emailInput.style.setProperty('text-align', 'center', 'important');
+      emailInput.setAttribute('placeholder', 'you@youremail.com');
+      emailInput.addEventListener('input', syncNameFromEmail);
+      // This page never shows field labels (everything else uses a
+      // placeholder instead) — match that instead of MailerLite's default
+      // visible "Work email" label.
+      var emailLabel = emailInput.closest('.ml-form-fieldRow').querySelector('label');
+      if (emailLabel) emailLabel.style.setProperty('display', 'none', 'important');
+    }
+
+    if (!btnDone) {
+      var btn = document.querySelector('#booking-form button.primary');
+      if (btn) {
+        btn.style.setProperty('background', 'var(--accent)', 'important');
+        btn.style.setProperty('color', '#080808', 'important');
+        btn.style.setProperty('border', 'none', 'important');
+        btn.style.setProperty('border-radius', '4px', 'important');
+        btn.style.setProperty('width', '100%', 'important');
+        btn.style.setProperty('font-weight', '600', 'important');
+        btn.style.setProperty('padding', '14px', 'important');
+        btn.style.setProperty('cursor', 'pointer', 'important');
+        // Overrides the form's configured button text ("Request a call") —
+        // wrong for this page, nobody's requesting a call here.
+        var btnLabel = Array.prototype.find.call(btn.childNodes, function (n) { return n.nodeType === 3; });
+        if (btnLabel) btnLabel.textContent = 'Send me this breakdown';
+        else btn.textContent = 'Send me this breakdown';
+        btnDone = true;
+      }
+    }
+
+    var successBody = document.querySelector('#booking-form .ml-form-successBody');
+    if (successBody && !successBody.dataset.styled) {
+      successBody.dataset.styled = '1';
+      successBody.style.setProperty('background', 'transparent', 'important');
+      successBody.style.setProperty('border', 'none', 'important');
+      successBody.style.setProperty('padding', '0', 'important');
+      // Overrides the form's configured success copy ("Thank you! / We'll
+      // be in touch to find a time that works.") to match what this page
+      // actually promised.
+      var successH4 = successBody.querySelector('h4');
+      var successP = successBody.querySelector('p');
+      if (successH4) successH4.textContent = 'Sent!';
+      if (successP) successP.textContent = 'Check your inbox for the breakdown.';
+    }
+
+    if (btnDone && nameDone && companyDone && interestDone && headerDone) clearInterval(iv);
+    if (tries > 150) clearInterval(iv);
+  }, 200);
+
+  // Safety net: force the Name field in sync right before MailerLite's own
+  // submit handler runs, in case autofill/paste didn't trigger the input
+  // listener above. Capture phase so this runs before universal.js's own
+  // listener on the same form.
+  document.getElementById('booking-form').addEventListener('submit', function () {
+    syncNameFromEmail();
+  }, true);
+
+  // generate_lead detection is deliberately its OWN permanent observer, not
+  // part of the interval above: that interval stops itself once the styling
+  // is done (usually within a couple of seconds), but a real visitor might
+  // take much longer than that to actually read their result and submit —
+  // this has to keep watching for as long as the page is open.
+  new MutationObserver(function () {
+    if (leadFired) return;
+    var successBody = document.querySelector('#booking-form .ml-form-successBody');
+    if (isVisible(successBody)) {
+      leadFired = true;
+      track('generate_lead', { source: 'retention_calculator' });
+    }
+  }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+})();
+</script>
+
+</body>
+</html>
