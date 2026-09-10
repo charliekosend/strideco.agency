@@ -10,9 +10,10 @@
   be run directly as an ad destination (Instagram/LinkedIn/paid), and
   deliberately unlinked from the main site nav/homepage.
 
-  Wired to the same MailerLite form (A0w2VT) and GA4 property
-  (G-WPSX42FK14) as the rest of the site — see the JS comments further
-  down for exactly what each integration does.
+  Wired to its own dedicated MailerLite form ("Retention Calculator —
+  Lead Magnet", not the shared "Book a call" form used elsewhere on the
+  site) and the same GA4 property (G-WPSX42FK14) — see the JS comments
+  further down for exactly what each integration does.
 -->
 <title>Free Calculator: What's Your Database Worth? | StrideCo</title>
 <meta name="description" content="A 20-second calculator that estimates how much registration revenue is sitting unclaimed in your past participant database.">
@@ -195,6 +196,15 @@
     font-size:13px;
     margin:24px 0 8px;
   }
+  .privacy-note{
+    color:var(--white-faint);
+    font-size:12px;
+    line-height:1.5;
+    text-align:left;
+    margin-top:12px;
+  }
+  .privacy-note a{color:var(--white-faint); text-decoration:underline;}
+  .privacy-note a:hover{color:var(--white);}
 
   /* Cookie banner — needed here specifically because paid traffic lands
      directly on this page without ever visiting the homepage first, same
@@ -345,16 +355,18 @@
       <a class="btn" id="cta-primary" href="/post-event-retention-system/">Discover how to reclaim it with the Post-Event Retention System →</a>
 
       <div class="or-divider">Or get this sent to you:</div>
-      <!-- Same MailerLite form (data-form="A0w2VT") the "Book a call" dialog
-           uses elsewhere on the site — reusing it rather than a second
-           integration. It also carries a required "Your name" and an
-           optional "Company" field that this page has no UI for; both are
-           hidden and Name is auto-filled with the email's local part
-           (everything before the @) at submit time, same idea as the
-           Interest field being hidden and preset to "Retention" below. -->
+      <!-- Dedicated MailerLite form ("Retention Calculator — Lead Magnet"),
+           separate from the "Book a call" form used elsewhere on the site.
+           Fields: email (required) and a "Marketing preferences" checkbox
+           (unticked by default, not required — ticking it is what actually
+           subscribes them to the newsletter/general marketing; leaving it
+           unticked still lets them get the breakdown emailed, since consent
+           for one has to stay separate from consent for the other). No name
+           field, so none of the earlier auto-fill workaround is needed. -->
       <div id="booking-form">
-        <div class="ml-embedded" data-form="A0w2VT"></div>
+        <div class="ml-embedded" data-form="198225969270490960"></div>
       </div>
+      <p class="privacy-note">We'll use your email to send the breakdown you asked for. See our <a href="/privacy-policy.html">Privacy Policy</a> for how we handle your data.</p>
     </div>
   </div>
 </main>
@@ -472,29 +484,20 @@
     });
   }
 
-  // Email capture -> MailerLite. Same form (data-form="A0w2VT") the "Book a call"
-  // dialog uses elsewhere on the site, rendered async by universal.js into
-  // #booking-form. Poll for it the same way booking-modal.js does, then:
-  //   - hide the Interest row and preset it to "Retention" (same pattern as
-  //     the Retention System landing page's booking dialog)
-  //   - hide the Name and Company rows too — this page's UI never collects
-  //     either. Name is required by the form, so it's auto-filled with
-  //     whatever's typed into the email field, up to the @ — kept in sync on
-  //     every keystroke and re-checked right before submit as a safety net
-  //     for autofill/paste.
-  //   - restyle the visible email input + button to match this page's dark
-  //     theme instead of MailerLite's default light form styling.
-  var INTEREST_PRESET = 'Retention';
-  var nameDone = false, companyDone = false, interestDone = false, btnDone = false, wrapDone = false, headerDone = false;
+  // Email capture -> MailerLite. Dedicated form (data-form="198225969270490960"),
+  // separate from the "Book a call" form — just email + a "Marketing preferences"
+  // checkbox, rendered async by universal.js into #booking-form. Poll for it the
+  // same way the rest of the site does, then:
+  //   - restyle the visible email input + button + consent checkbox to match
+  //     this page's dark theme instead of MailerLite's default light styling.
+  //   - leave the checkbox itself completely alone otherwise: unticked by
+  //     default, not required, submits either way. Never force it — ticking
+  //     it is a separate marketing consent from the transactional "send me
+  //     my breakdown" action, and bundling the two would undo the point of
+  //     having it be optional in the first place.
+  var btnDone = false, wrapDone = false, headerDone = false, consentDone = false;
   var leadFired = false;
   var tries = 0;
-
-  function syncNameFromEmail() {
-    var emailInput = document.querySelector('#booking-form input[name="fields[email]"]');
-    var nameInput = document.querySelector('#booking-form input[name="fields[name]"]');
-    if (!emailInput || !nameInput) return;
-    nameInput.value = emailInput.value.split('@')[0];
-  }
 
   function isVisible(el) { return !!el && el.offsetParent !== null; }
 
@@ -517,35 +520,6 @@
       }
     }
 
-    if (!nameDone) {
-      var nameInput = document.querySelector('#booking-form input[name="fields[name]"]');
-      if (nameInput) {
-        var nameRow = nameInput.closest('.ml-form-fieldRow') || nameInput;
-        nameRow.style.setProperty('display', 'none', 'important');
-        nameDone = true;
-      }
-    }
-    if (!companyDone) {
-      var companyField = document.querySelector('#booking-form textarea[name="fields[company]"]');
-      if (companyField) {
-        var companyRow = companyField.closest('.ml-form-fieldRow') || companyField;
-        companyRow.style.setProperty('display', 'none', 'important');
-        companyDone = true;
-      }
-    }
-    if (!interestDone) {
-      var select = document.querySelector('#booking-form select[name="fields[interest]"]');
-      if (select) {
-        var interestRow = select.closest('.ml-form-fieldRow') || select;
-        interestRow.style.setProperty('display', 'none', 'important');
-        var match = Array.prototype.find.call(select.options, function (o) {
-          return o.textContent.trim() === INTEREST_PRESET;
-        });
-        if (match) select.value = match.value;
-        interestDone = true;
-      }
-    }
-
     var emailInput = document.querySelector('#booking-form input[name="fields[email]"]');
     if (emailInput && !emailInput.dataset.styled) {
       emailInput.dataset.styled = '1';
@@ -557,12 +531,34 @@
       emailInput.style.setProperty('color', 'var(--white)', 'important');
       emailInput.style.setProperty('text-align', 'center', 'important');
       emailInput.setAttribute('placeholder', 'you@youremail.com');
-      emailInput.addEventListener('input', syncNameFromEmail);
       // This page never shows field labels (everything else uses a
       // placeholder instead) — match that instead of MailerLite's default
       // visible "Work email" label.
       var emailLabel = emailInput.closest('.ml-form-fieldRow').querySelector('label');
       if (emailLabel) emailLabel.style.setProperty('display', 'none', 'important');
+    }
+
+    if (!consentDone) {
+      var consentCheckbox = document.querySelector('#booking-form input[name="fields[marketing_preferences][]"]');
+      if (consentCheckbox) {
+        var consentRow = consentCheckbox.closest('.ml-form-fieldRow') || consentCheckbox;
+        consentRow.style.setProperty('margin-top', '16px', 'important');
+        var consentGroup = consentCheckbox.closest('.ml-field-group');
+        if (consentGroup) consentGroup.style.setProperty('display', 'flex', 'important');
+        consentCheckbox.style.setProperty('width', '18px', 'important');
+        consentCheckbox.style.setProperty('height', '18px', 'important');
+        consentCheckbox.style.setProperty('flex-shrink', '0', 'important');
+        consentCheckbox.style.setProperty('accent-color', 'var(--accent)', 'important');
+        consentCheckbox.style.setProperty('margin-top', '2px', 'important');
+        var consentLabel = (consentGroup || consentRow).querySelector('label');
+        if (consentLabel) {
+          consentLabel.style.setProperty('color', 'var(--white-muted)', 'important');
+          consentLabel.style.setProperty('font-size', '13px', 'important');
+          consentLabel.style.setProperty('line-height', '1.5', 'important');
+          consentLabel.style.setProperty('text-align', 'left', 'important');
+        }
+        consentDone = true;
+      }
     }
 
     if (!btnDone) {
@@ -600,17 +596,9 @@
       if (successP) successP.textContent = 'Check your inbox for the breakdown.';
     }
 
-    if (btnDone && nameDone && companyDone && interestDone && headerDone) clearInterval(iv);
+    if (btnDone && consentDone && headerDone) clearInterval(iv);
     if (tries > 150) clearInterval(iv);
   }, 200);
-
-  // Safety net: force the Name field in sync right before MailerLite's own
-  // submit handler runs, in case autofill/paste didn't trigger the input
-  // listener above. Capture phase so this runs before universal.js's own
-  // listener on the same form.
-  document.getElementById('booking-form').addEventListener('submit', function () {
-    syncNameFromEmail();
-  }, true);
 
   // generate_lead detection is deliberately its OWN permanent observer, not
   // part of the interval above: that interval stops itself once the styling
