@@ -550,7 +550,14 @@
         consentCheckbox.style.setProperty('flex-shrink', '0', 'important');
         consentCheckbox.style.setProperty('accent-color', 'var(--accent)', 'important');
         consentCheckbox.style.setProperty('margin-top', '2px', 'important');
-        var consentLabel = (consentGroup || consentRow).querySelector('label');
+        // Two labels live in this group: a generic outer "Marketing
+        // preferences" group label, and the actual checkbox option text
+        // (the real consent sentence). Hide the generic one — this page
+        // doesn't show field labels anywhere else either — and style only
+        // the real sentence.
+        var groupLabels = Array.from((consentGroup || consentRow).querySelectorAll('label'));
+        if (groupLabels[0]) groupLabels[0].style.setProperty('display', 'none', 'important');
+        var consentLabel = groupLabels[1];
         if (consentLabel) {
           consentLabel.style.setProperty('color', 'var(--white-muted)', 'important');
           consentLabel.style.setProperty('font-size', '13px', 'important');
