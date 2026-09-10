@@ -405,6 +405,23 @@
   var progressFill = document.getElementById('progress-fill');
   var current = 0;
 
+  // Plain-text versions of the reveal copy, set by calculateResult() below
+  // and carried into the hidden calc_* fields on the MailerLite form so the
+  // "send me this breakdown" email can quote them back via merge tags. Set
+  // once, at reveal time — set from BOTH calculateResult() (which usually
+  // runs first) and the field-population poll (in case MailerLite's form
+  // hasn't finished rendering yet when calculateResult() runs), whichever
+  // happens second is a harmless no-op re-set of the same values.
+  var calcRevenueText = '', calcStatText = '', calcBodyText = '';
+  function populateCalcFields() {
+    var revenueInput = document.querySelector('#booking-form input[name="fields[calc_revenue]"]');
+    var statInput = document.querySelector('#booking-form input[name="fields[calc_stat]"]');
+    var bodyInput = document.querySelector('#booking-form textarea[name="fields[calc_body]"]');
+    if (revenueInput) revenueInput.value = calcRevenueText;
+    if (statInput) statInput.value = calcStatText;
+    if (bodyInput) bodyInput.value = calcBodyText;
+  }
+
   function track(eventName, params) {
     if (localStorage.getItem('cookie_consent') !== 'accepted') return;
     if (typeof window.gtag !== 'function') return;
@@ -467,6 +484,14 @@
       statEl.innerHTML = 'You\'re already retaining well — most events aren\'t.';
       bodyEl.innerHTML = '<p>Based on what you told us, your past participants are already coming back. That\'s rare. The Post-Event Retention System exists to make sure it <strong>stays</strong> that way as you grow, rather than slipping once you stop paying attention to it.</p>';
       ctaEl.textContent = 'See how the Post-Event Retention System keeps it that way →';
+
+      // Plain-text versions of the same copy, for the "send me this
+      // breakdown" email — see calc field population below. No revenue
+      // figure here since the whole point of this branch is that nothing's
+      // being left on the table.
+      calcRevenueText = '';
+      calcStatText = 'You\'re already retaining well — most events aren\'t.';
+      calcBodyText = 'Based on what you told us, your past participants are already coming back. That\'s rare. The Post-Event Retention System exists to make sure it stays that way as you grow, rather than slipping once you stop paying attention to it.';
     } else {
       statEl.innerHTML = 'Roughly <span class="accent">' + nonReturnPct + '%</span> of your past participants aren\'t coming back.';
       bodyEl.innerHTML =
@@ -474,7 +499,15 @@
         '<p>The ' + unclaimedCount.toLocaleString() + ' people already in your database are the cheapest revenue available anywhere in your business right now.</p>' +
         '<p><strong>What if we said you could capture that £' + revenueLeft.toLocaleString() + ' for 5–25x less than what it costs to chase brand-new registrations instead?</strong></p>';
       ctaEl.textContent = 'Discover how to reclaim £' + revenueLeft.toLocaleString() + ' with the Post-Event Retention System →';
+
+      calcRevenueText = '£' + revenueLeft.toLocaleString();
+      calcStatText = 'Roughly ' + nonReturnPct + '% of your past participants aren\'t coming back.';
+      calcBodyText =
+        'Based on your numbers, that\'s about ' + unclaimedCount.toLocaleString() + ' people — worth an estimated £' + revenueLeft.toLocaleString() + ' in registrations, sitting unclaimed in your database.\n\n' +
+        'The ' + unclaimedCount.toLocaleString() + ' people already in your database are the cheapest revenue available anywhere in your business right now.\n\n' +
+        'What if we said you could capture that £' + revenueLeft.toLocaleString() + ' for 5–25x less than what it costs to chase brand-new registrations instead?';
     }
+    populateCalcFields();
 
     track('calculator_completed', {
       attendees: attendees,
@@ -495,7 +528,7 @@
   //     it is a separate marketing consent from the transactional "send me
   //     my breakdown" action, and bundling the two would undo the point of
   //     having it be optional in the first place.
-  var btnDone = false, wrapDone = false, headerDone = false, consentDone = false;
+  var btnDone = false, wrapDone = false, headerDone = false, consentDone = false, calcFieldsDone = false;
   var leadFired = false;
   var tries = 0;
 
@@ -568,6 +601,20 @@
       }
     }
 
+    if (!calcFieldsDone) {
+      var revenueInput = document.querySelector('#booking-form input[name="fields[calc_revenue]"]');
+      var statInput = document.querySelector('#booking-form input[name="fields[calc_stat]"]');
+      var bodyInput = document.querySelector('#booking-form textarea[name="fields[calc_body]"]');
+      if (revenueInput && statInput && bodyInput) {
+        [revenueInput, statInput, bodyInput].forEach(function (el) {
+          var row = el.closest('.ml-form-fieldRow') || el;
+          row.style.setProperty('display', 'none', 'important');
+        });
+        populateCalcFields();
+        calcFieldsDone = true;
+      }
+    }
+
     if (!btnDone) {
       var btn = document.querySelector('#booking-form button.primary');
       if (btn) {
@@ -603,7 +650,7 @@
       if (successP) successP.textContent = 'Check your inbox for the breakdown.';
     }
 
-    if (btnDone && consentDone && headerDone) clearInterval(iv);
+    if (btnDone && consentDone && headerDone && calcFieldsDone) clearInterval(iv);
     if (tries > 150) clearInterval(iv);
   }, 200);
 
