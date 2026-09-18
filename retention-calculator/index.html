@@ -460,6 +460,7 @@
   // hasn't finished rendering yet when calculateResult() runs), whichever
   // happens second is a harmless no-op re-set of the same values.
   var calcRevenueText = '', calcStatText = '', calcBodyText = '';
+  var lastRevenueEstimate = 0;
   function populateCalcFields() {
     var revenueInput = document.querySelector('#booking-form input[name="fields[calc_revenue]"]');
     var statInput = document.querySelector('#booking-form input[name="fields[calc_stat]"]');
@@ -501,6 +502,7 @@
   }
   document.getElementById('cta-primary').addEventListener('click', function (e) {
     e.preventDefault();
+    track('calculator_cta_click', { revenue_estimate: lastRevenueEstimate });
     openEmailModal();
   });
   document.getElementById('email-modal-close').addEventListener('click', closeEmailModal);
@@ -544,6 +546,7 @@
     var nonReturnPct = Math.round(nonReturnFraction * 100);
     var unclaimedCount = Math.round(attendees * nonReturnFraction);
     var revenueLeft = Math.round(unclaimedCount * price);
+    lastRevenueEstimate = revenueLeft;
 
     var statEl = document.getElementById('reveal-stat');
     var bodyEl = document.getElementById('reveal-body');
