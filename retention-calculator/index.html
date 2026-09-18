@@ -191,11 +191,48 @@
     text-align:left;
     margin-bottom:28px;
   }
-  .or-divider{
-    color:var(--white-faint);
-    font-size:13px;
-    margin:24px 0 8px;
+  /* Email-capture modal, opened from the reveal screen's main CTA. */
+  .modal-overlay{
+    position:fixed; inset:0; z-index:150;
+    background:rgba(8,8,8,.85);
+    display:flex;
+    padding:24px;
+    overflow-y:auto;
   }
+  .modal-overlay[hidden]{display:none;}
+  .modal-card{
+    position:relative;
+    width:100%; max-width:460px;
+    margin:auto;
+    background:#121212;
+    border:1px solid rgba(255,255,255,.15);
+    border-radius:8px;
+    padding:32px 24px 24px;
+    text-align:center;
+  }
+  .modal-card h2{
+    font-weight:800;
+    font-size:24px;
+    line-height:1.25;
+    margin-bottom:16px;
+    padding:0 24px;
+  }
+  .modal-close{
+    position:absolute; top:10px; right:10px;
+    background:none; border:none;
+    color:var(--white-muted);
+    font-size:18px; line-height:1;
+    padding:8px; cursor:pointer;
+  }
+  .modal-close:hover{color:var(--white);}
+  .modal-skip{
+    display:inline-block;
+    margin-top:16px;
+    color:var(--white-muted);
+    font-size:14px;
+    text-decoration:underline;
+  }
+  .modal-skip:hover{color:var(--white);}
   .privacy-note{
     color:var(--white-faint);
     font-size:12px;
@@ -354,22 +391,32 @@
 
       <a class="btn" id="cta-primary" href="/post-event-retention-system/">Discover how to reclaim it with the Post-Event Retention System →</a>
 
-      <div class="or-divider">Or get this sent to you:</div>
-      <!-- Dedicated MailerLite form ("Retention Calculator — Lead Magnet"),
-           separate from the "Book a call" form used elsewhere on the site.
-           Fields: email (required) and a "Marketing preferences" checkbox
-           (unticked by default, not required — ticking it is what actually
-           subscribes them to the newsletter/general marketing; leaving it
-           unticked still lets them get the breakdown emailed, since consent
-           for one has to stay separate from consent for the other). No name
-           field, so none of the earlier auto-fill workaround is needed. -->
-      <div id="booking-form">
-        <div class="ml-embedded" data-form="dK6rVA"></div>
-      </div>
-      <p class="privacy-note">We'll use your email to send the breakdown you asked for. See our <a href="/privacy-policy.html">Privacy Policy</a> for how we handle your data.</p>
     </div>
   </div>
 </main>
+
+<!-- Email-capture modal. Opens when the reveal screen's main CTA is clicked
+     (instead of navigating straight away); "No thanks" still gets them to
+     the Retention System page. -->
+<div class="modal-overlay" id="email-modal" hidden role="dialog" aria-modal="true" aria-labelledby="email-modal-title">
+  <div class="modal-card">
+    <button type="button" class="modal-close" id="email-modal-close" aria-label="Close">✕</button>
+    <h2 id="email-modal-title">Get this emailed to you</h2>
+    <!-- Dedicated MailerLite form ("Retention Calculator — Lead Magnet"),
+         separate from the "Book a call" form used elsewhere on the site.
+         Fields: email (required) and a "Marketing preferences" checkbox
+         (unticked by default, not required — ticking it is what actually
+         subscribes them to the newsletter/general marketing; leaving it
+         unticked still lets them get the breakdown emailed, since consent
+         for one has to stay separate from consent for the other). No name
+         field, so none of the earlier auto-fill workaround is needed. -->
+    <div id="booking-form">
+      <div class="ml-embedded" data-form="dK6rVA"></div>
+    </div>
+    <p class="privacy-note" id="email-modal-privacy">We'll use your email to send the breakdown you asked for. See our <a href="/privacy-policy.html">Privacy Policy</a> for how we handle your data.</p>
+    <a class="modal-skip" id="email-modal-skip" href="/post-event-retention-system/">No thanks, take me to the Retention System →</a>
+  </div>
+</div>
 
 <div class="cookie-banner" id="cookie-banner" hidden>
   <p>We use cookies to understand how visitors use this site (analytics via GA4 and Microsoft Clarity). No data is sold. You can decline and still browse normally.</p>
@@ -440,6 +487,29 @@
   // for step 0) — without this, drop-off from the very first screen is
   // invisible in GA4.
   showStep(0);
+
+  // Email-capture modal: the reveal screen's main CTA opens it instead of
+  // navigating straight away.
+  var emailModal = document.getElementById('email-modal');
+  function openEmailModal() {
+    emailModal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function closeEmailModal() {
+    emailModal.hidden = true;
+    document.body.style.overflow = '';
+  }
+  document.getElementById('cta-primary').addEventListener('click', function (e) {
+    e.preventDefault();
+    openEmailModal();
+  });
+  document.getElementById('email-modal-close').addEventListener('click', closeEmailModal);
+  emailModal.addEventListener('click', function (e) {
+    if (e.target === emailModal) closeEmailModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !emailModal.hidden) closeEmailModal();
+  });
 
   document.querySelectorAll('[data-next]').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -646,8 +716,23 @@
       // actually promised.
       var successH4 = successBody.querySelector('h4');
       var successP = successBody.querySelector('p');
-      if (successH4) successH4.textContent = 'Sent!';
-      if (successP) successP.textContent = 'Check your inbox for the breakdown.';
+      // MailerLite's own success styling is black text on a light card;
+      // on this page's dark background that's invisible.
+      if (successH4) {
+        successH4.textContent = 'Sent!';
+        successH4.style.setProperty('color', 'var(--white)', 'important');
+        successH4.style.setProperty('font-family', "'Red Hat Display', system-ui, sans-serif", 'important');
+        successH4.style.setProperty('font-weight', '800', 'important');
+        successH4.style.setProperty('font-size', '26px', 'important');
+        successH4.style.setProperty('text-align', 'center', 'important');
+      }
+      if (successP) {
+        successP.textContent = 'Check your inbox for the breakdown.';
+        successP.style.setProperty('color', 'var(--white-muted)', 'important');
+        successP.style.setProperty('font-family', "'Plus Jakarta Sans', system-ui, sans-serif", 'important');
+        successP.style.setProperty('font-size', '16px', 'important');
+        successP.style.setProperty('text-align', 'center', 'important');
+      }
     }
 
     if (btnDone && consentDone && headerDone && calcFieldsDone) clearInterval(iv);
@@ -665,6 +750,14 @@
     if (isVisible(successBody)) {
       leadFired = true;
       track('generate_lead', { source: 'retention_calculator' });
+      // Success state inside the modal: drop the now-redundant heading and
+      // privacy line, and turn the "No thanks" link into the natural next
+      // step.
+      document.getElementById('email-modal-title').hidden = true;
+      document.getElementById('email-modal-privacy').hidden = true;
+      var skipLink = document.getElementById('email-modal-skip');
+      skipLink.className = 'btn';
+      skipLink.textContent = 'Continue to the Retention System →';
     }
   }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
 })();
