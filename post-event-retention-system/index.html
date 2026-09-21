@@ -30,8 +30,9 @@
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
 <link rel="apple-touch-icon" href="/assets/favicon.svg">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/fonts.css">
+<link rel="preload" href="/assets/fonts/PlusJakartaSans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/RedHatDisplay-latin.woff2" as="font" type="font/woff2" crossorigin>
 
 <style>
   :root{
@@ -361,6 +362,7 @@
     padding:20px 22px;
   }
   .cookie-banner[hidden]{display:none;}
+  .cookie-banner a{color:#fff; text-decoration:underline;}
   .cookie-banner p{
     font-size:14px; line-height:1.5; color:rgba(255,255,255,.7);
     margin-bottom:14px;
@@ -539,11 +541,11 @@
 
 <footer>
   <div>StrideCo · Event Marketing Systems That Move People</div>
-  <div style="margin-top:8px;">strideco.agency · © 2026 · <a href="/privacy-policy.html">Privacy</a> · <a href="/terms.html">Terms</a></div>
+  <div style="margin-top:8px;">strideco.agency · © 2026 · <a href="/privacy-policy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="#" data-cookie-settings>Cookie settings</a></div>
 </footer>
 
 <div class="cookie-banner" id="cookie-banner" hidden>
-  <p>We use cookies to understand how visitors use this site (analytics via GA4 and Microsoft Clarity). No data is sold. You can decline and still browse normally.</p>
+  <p>We use cookies to understand how visitors use this site (analytics via GA4 and Microsoft Clarity, which also records how you interact with pages as replays and heatmaps). No data is sold. You can decline and still browse normally. <a href="/privacy-policy.html">Privacy policy</a>.</p>
   <div class="cookie-banner-actions">
     <button type="button" class="cookie-btn cookie-btn-decline" id="cookie-decline">Decline</button>
     <button type="button" class="cookie-btn cookie-btn-accept" id="cookie-accept">Accept</button>
@@ -570,6 +572,7 @@
 
 <script>(function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[]).push(arguments);},l=d.createElement(e),l.async=1,l.src=u,n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})(window,document,"script","https://assets.mailerlite.com/js/universal.js","ml");ml("account", "1611723");</script>
 <script src="/assets/js/booking-modal.js?v=2"></script>
+<script src="/assets/js/cookie-settings.js?v=1"></script>
 
 <script>
 (function () {
