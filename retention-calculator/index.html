@@ -217,48 +217,25 @@
     text-align:left;
     margin-bottom:28px;
   }
-  /* Email-capture modal, opened from the reveal screen's main CTA. */
-  .modal-overlay{
-    position:fixed; inset:0; z-index:250; /* above the cookie banner (200), so the banner can't cut the form off */
-    background:rgba(8,8,8,.85);
-    display:flex;
-    padding:24px;
-    overflow-y:auto;
-  }
-  .modal-overlay[hidden]{display:none;}
-  .modal-card{
-    position:relative;
-    width:100%; max-width:460px;
-    margin:auto;
-    background:#121212;
+  /* Email capture, inline on the result screen. */
+  .email-capture{
+    background:rgba(255,255,255,.04);
     border:1px solid rgba(255,255,255,.15);
     border-radius:8px;
-    padding:32px 24px 24px;
+    padding:24px 20px 20px;
+    margin:8px 0 24px;
     text-align:center;
   }
-  .modal-card h2{
+  .email-capture h2{
     font-weight:800;
-    font-size:24px;
+    font-size:22px;
     line-height:1.25;
     margin-bottom:16px;
-    padding:0 24px;
   }
-  .modal-close{
-    position:absolute; top:10px; right:10px;
-    background:none; border:none;
-    color:var(--white-muted);
-    font-size:18px; line-height:1;
-    padding:8px; cursor:pointer;
-  }
-  .modal-close:hover{color:var(--white);}
-  .modal-skip{
-    display:inline-block;
-    margin-top:16px;
-    color:var(--white-muted);
-    font-size:14px;
-    text-decoration:underline;
-  }
-  .modal-skip:hover{color:var(--white);}
+  /* (.step p would otherwise stretch this note and any MailerLite paragraphs) */
+  .email-capture p{margin-bottom:0;}
+  .email-capture .privacy-note{margin-top:12px; font-size:12px; color:var(--white-faint);}
+  .footnote-after{margin:28px 0 0;}
   .privacy-note{
     color:var(--white-faint);
     font-size:12px;
@@ -422,36 +399,33 @@
     <div class="step" data-step="4">
       <div id="reveal-stat" class="reveal-stat"></div>
       <div id="reveal-body" class="reveal-body"></div>
-      <div class="footnote">Rough estimate based on the numbers you entered, and a widely-cited retention-vs-acquisition principle — not a full audit. But directionally, it's usually right.</div>
 
-      <a class="btn" id="cta-primary" href="/post-event-retention-system/">Discover how to reclaim it with the Post-Event Retention System →</a>
+      <!-- Email capture, right on the result screen. Dedicated MailerLite form
+           ("Retention Calculator — Lead Magnet"), separate from the "Book a
+           call" form used elsewhere on the site. Fields: email (required) and
+           a "Marketing preferences" checkbox (unticked by default, not
+           required — ticking it is what actually subscribes them to the
+           newsletter/general marketing; leaving it unticked still lets them
+           get the breakdown emailed, since consent for one has to stay
+           separate from consent for the other). The #booking-form id is what
+           the styling/tracking script below looks for. -->
+      <div class="email-capture" id="email-capture">
+        <h2 id="email-capture-title">Get this breakdown emailed to you</h2>
+        <div id="booking-form">
+          <div class="ml-embedded" data-form="dK6rVA"></div>
+        </div>
+        <p class="privacy-note" id="email-capture-privacy">We'll use your email to send the breakdown you asked for. See our <a href="/privacy-policy.html">Privacy Policy</a> for how we handle your data.</p>
+      </div>
 
+      <!-- The "What if we said..." pitch sits below the email form, so the form isn't pushed off the first screen on a phone. -->
+      <div id="reveal-pitch" class="reveal-body"></div>
+
+      <a class="btn btn-secondary" id="cta-primary" href="/post-event-retention-system/">See how the Post-Event Retention System works →</a>
+
+      <div class="footnote footnote-after">Rough estimate based on the numbers you entered, and a widely-cited retention-vs-acquisition principle — not a full audit. But directionally, it's usually right.</div>
     </div>
   </div>
 </main>
-
-<!-- Email-capture modal. Opens when the reveal screen's main CTA is clicked
-     (instead of navigating straight away); "No thanks" still gets them to
-     the Retention System page. -->
-<div class="modal-overlay" id="email-modal" hidden role="dialog" aria-modal="true" aria-labelledby="email-modal-title">
-  <div class="modal-card">
-    <button type="button" class="modal-close" id="email-modal-close" aria-label="Close">✕</button>
-    <h2 id="email-modal-title">Get this emailed to you</h2>
-    <!-- Dedicated MailerLite form ("Retention Calculator — Lead Magnet"),
-         separate from the "Book a call" form used elsewhere on the site.
-         Fields: email (required) and a "Marketing preferences" checkbox
-         (unticked by default, not required — ticking it is what actually
-         subscribes them to the newsletter/general marketing; leaving it
-         unticked still lets them get the breakdown emailed, since consent
-         for one has to stay separate from consent for the other). No name
-         field, so none of the earlier auto-fill workaround is needed. -->
-    <div id="booking-form">
-      <div class="ml-embedded" data-form="dK6rVA"></div>
-    </div>
-    <p class="privacy-note" id="email-modal-privacy">We'll use your email to send the breakdown you asked for. See our <a href="/privacy-policy.html">Privacy Policy</a> for how we handle your data.</p>
-    <a class="modal-skip" id="email-modal-skip" href="/post-event-retention-system/">No thanks, take me to the Retention System →</a>
-  </div>
-</div>
 
 <footer style="text-align:center; padding:28px 16px 40px; font-size:12px; color:var(--white-faint);">
   <div style="margin-bottom:8px;"><a href="https://www.instagram.com/strideco.agency/" target="_blank" rel="noopener noreferrer" aria-label="StrideCo on Instagram (opens in a new tab)" style="color:inherit; text-decoration:underline;">Instagram</a> · <a href="https://www.linkedin.com/company/strideco-agency/" target="_blank" rel="noopener noreferrer" aria-label="StrideCo on LinkedIn (opens in a new tab)" style="color:inherit; text-decoration:underline;">LinkedIn</a></div>
@@ -539,28 +513,11 @@
   // invisible in GA4.
   showStep(0);
 
-  // Email-capture modal: the reveal screen's main CTA opens it instead of
-  // navigating straight away.
-  var emailModal = document.getElementById('email-modal');
-  function openEmailModal() {
-    emailModal.hidden = false;
-    document.body.style.overflow = 'hidden';
-  }
-  function closeEmailModal() {
-    emailModal.hidden = true;
-    document.body.style.overflow = '';
-  }
-  document.getElementById('cta-primary').addEventListener('click', function (e) {
-    e.preventDefault();
-    track('calculator_cta_click', { revenue_estimate: lastRevenueEstimate });
-    openEmailModal();
-  });
-  document.getElementById('email-modal-close').addEventListener('click', closeEmailModal);
-  emailModal.addEventListener('click', function (e) {
-    if (e.target === emailModal) closeEmailModal();
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !emailModal.hidden) closeEmailModal();
+  // The Retention System link under the email form is a normal link now (it used
+  // to open an email pop-up first). Track the click; "beacon" so the event still
+  // gets sent as the browser navigates away.
+  document.getElementById('cta-primary').addEventListener('click', function () {
+    track('calculator_cta_click', { revenue_estimate: lastRevenueEstimate, transport_type: 'beacon' });
   });
 
   document.querySelectorAll('[data-next]').forEach(function (btn) {
@@ -600,11 +557,13 @@
 
     var statEl = document.getElementById('reveal-stat');
     var bodyEl = document.getElementById('reveal-body');
+    var pitchEl = document.getElementById('reveal-pitch');
     var ctaEl = document.getElementById('cta-primary');
 
     // EDGE CASE: slider at 10 means they claim 100% return already.
     if (sliderVal === 10) {
       statEl.innerHTML = 'You\'re already retaining well — most events aren\'t.';
+      pitchEl.innerHTML = '';
       bodyEl.innerHTML = '<p>Based on what you told us, your past participants are already coming back. That\'s rare. The Post-Event Retention System exists to make sure it <strong>stays</strong> that way as you grow, rather than slipping once you stop paying attention to it.</p>';
       ctaEl.textContent = 'See how the Post-Event Retention System keeps it that way →';
 
@@ -619,9 +578,10 @@
       statEl.innerHTML = 'Roughly <span class="accent">' + nonReturnPct + '%</span> of your past participants aren\'t coming back.';
       bodyEl.innerHTML =
         '<p>Based on your numbers, that\'s about <strong>' + unclaimedCount.toLocaleString() + ' people</strong> — worth an estimated <strong>£' + revenueLeft.toLocaleString() + '</strong> in registrations, sitting unclaimed in your database.</p>' +
-        '<p>The ' + unclaimedCount.toLocaleString() + ' people already in your database are the cheapest revenue available anywhere in your business right now.</p>' +
+        '<p>The ' + unclaimedCount.toLocaleString() + ' people already in your database are the cheapest revenue available anywhere in your business right now.</p>';
+      pitchEl.innerHTML =
         '<p><strong>What if we said you could capture that £' + revenueLeft.toLocaleString() + ' for 5–25x less than what it costs to chase brand-new registrations instead?</strong></p>';
-      ctaEl.textContent = 'Discover how to reclaim £' + revenueLeft.toLocaleString() + ' with the Post-Event Retention System →';
+      ctaEl.textContent = 'See how to reclaim £' + revenueLeft.toLocaleString() + ' with the Post-Event Retention System →';
 
       calcRevenueText = '£' + revenueLeft.toLocaleString();
       calcStatText = 'Roughly ' + nonReturnPct + '% of your past participants aren\'t coming back.';
@@ -803,14 +763,13 @@
     if (isVisible(successBody)) {
       leadFired = true;
       track('generate_lead', { source: 'retention_calculator' });
-      // Success state inside the modal: drop the now-redundant heading and
-      // privacy line, and turn the "No thanks" link into the natural next
-      // step.
-      document.getElementById('email-modal-title').hidden = true;
-      document.getElementById('email-modal-privacy').hidden = true;
-      var skipLink = document.getElementById('email-modal-skip');
-      skipLink.className = 'btn';
-      skipLink.textContent = 'Continue to the Retention System →';
+      // Success state: drop the now-redundant heading and privacy line, and
+      // promote the Retention System link from secondary to the main button.
+      document.getElementById('email-capture-title').hidden = true;
+      document.getElementById('email-capture-privacy').hidden = true;
+      var nextLink = document.getElementById('cta-primary');
+      nextLink.className = 'btn';
+      nextLink.textContent = 'Continue to the Retention System →';
     }
   }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
 })();
