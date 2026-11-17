@@ -219,7 +219,7 @@
   }
   /* Email-capture modal, opened from the reveal screen's main CTA. */
   .modal-overlay{
-    position:fixed; inset:0; z-index:150;
+    position:fixed; inset:0; z-index:250; /* above the cookie banner (200), so the banner can't cut the form off */
     background:rgba(8,8,8,.85);
     display:flex;
     padding:24px;
@@ -287,6 +287,14 @@
     margin-bottom:14px;
   }
   .cookie-banner-actions{display:flex; gap:10px; justify-content:flex-end;}
+  /* On phones the banner was ~220px tall and sat on top of the calculator's
+     Next buttons and the email form. Tighter spacing here (same wording), and
+     the script below reserves room for it at the bottom of the page. */
+  @media (max-width:480px){
+    .cookie-banner{left:8px; right:8px; bottom:8px; padding:14px 16px;}
+    .cookie-banner p{font-size:13px; line-height:1.4; margin-bottom:10px;}
+    .cookie-btn{padding:7px 14px; font-size:13px;}
+  }
   .cookie-btn{
     font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:14px;
     padding:8px 16px; border-radius:4px; cursor:pointer; border:1px solid transparent;
@@ -463,15 +471,24 @@
 (function () {
   var banner = document.getElementById('cookie-banner');
   var stored = localStorage.getItem('cookie_consent');
+  // While the banner is showing, add matching padding to the bottom of the page
+  // so the calculator's buttons can always be scrolled up clear of it.
+  function reserveBannerSpace() {
+    document.body.style.paddingBottom = banner.hidden ? '' : (banner.offsetHeight + 24) + 'px';
+  }
   if (stored !== 'accepted' && stored !== 'declined') {
     banner.hidden = false;
   }
+  reserveBannerSpace();
+  window.addEventListener('resize', reserveBannerSpace);
   document.getElementById('cookie-accept').addEventListener('click', function () {
     banner.hidden = true;
+    reserveBannerSpace();
     window.grantAnalyticsConsent();
   });
   document.getElementById('cookie-decline').addEventListener('click', function () {
     banner.hidden = true;
+    reserveBannerSpace();
     window.revokeAnalyticsConsent();
   });
 })();
