@@ -236,6 +236,8 @@
   .email-capture p{margin-bottom:0;}
   .email-capture .privacy-note{margin-top:12px; font-size:12px; color:var(--white-faint);}
   .footnote-after{margin:28px 0 0;}
+  .email-capture .form-fallback{color:var(--white-muted); font-size:14px; line-height:1.55; text-align:left; margin-top:4px;}
+  .email-capture .form-fallback a{color:var(--accent); text-decoration:underline; word-break:break-word;}
   .privacy-note{
     color:var(--white-faint);
     font-size:12px;
@@ -751,6 +753,26 @@
     if (btnDone && consentDone && headerDone && calcFieldsDone) clearInterval(iv);
     if (tries > 150) clearInterval(iv);
   }, 200);
+
+  // If MailerLite's form never loads (a VPN, ad/tracker blocker or privacy setting
+  // can block assets.mailerlite.com), the visitor would just see an empty box and
+  // silently have no way to sign up. After 10s with no form, say so, and offer a
+  // pre-filled email carrying their result, so it's still a way in. Also logs a
+  // GA4 event (cookie-consented visitors only) so we can see how often it happens.
+  setTimeout(function () {
+    if (document.querySelector('#booking-form form')) return;
+    var wrap = document.getElementById('booking-form');
+    if (!wrap) return;
+    var body = 'Hi, I used the retention calculator and would like my breakdown emailed to me.\n\n' +
+      (calcStatText || '') + (calcRevenueText ? '\nEstimated unclaimed revenue: ' + calcRevenueText : '');
+    var mailto = 'mailto:contact@strideco.agency?subject=' + encodeURIComponent('Retention calculator breakdown') +
+      '&body=' + encodeURIComponent(body);
+    wrap.innerHTML = '<p class="form-fallback">The email form couldn\'t load. A VPN, ad blocker or privacy setting can block it. ' +
+      'Try switching it off and refreshing, or <a href="' + mailto + '">email us instead</a> and we\'ll get back to you.</p>';
+    var note = document.getElementById('email-capture-privacy');
+    if (note) note.hidden = true;
+    track('email_form_failed', { page: 'retention_calculator' });
+  }, 10000);
 
   // generate_lead detection is deliberately its OWN permanent observer, not
   // part of the interval above: that interval stops itself once the styling
