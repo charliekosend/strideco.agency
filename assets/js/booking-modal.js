@@ -12,6 +12,9 @@
   element with [data-close-book-a-call], plus the overlay backdrop itself
   and the Escape key, closes it.
 
+  A URL ending in #book-a-call (query string allowed before it) opens the
+  dialog on load; closing it removes the hash and keeps the query string.
+
   data-hide-interest-field="true" on #booking-dialog means: once MailerLite
   renders its "Interest" dropdown into this form, hide it from the visitor
   and pre-set its value instead of asking them to choose (used on pages
@@ -29,6 +32,11 @@
   var dialog = document.getElementById('booking-dialog');
   if (!dialog) return;
 
+  // Deep link: a URL ending in #book-a-call (e.g. from an email) opens the
+  // dialog on arrival. The final CTA section keeps id="book-a-call" so the
+  // same link still scrolls to a booking button if JS fails.
+  var AUTO_OPEN_HASH = '#book-a-call';
+
   function openDialog() {
     dialog.hidden = false;
     document.body.style.overflow = 'hidden';
@@ -36,6 +44,9 @@
   function closeDialog() {
     dialog.hidden = true;
     document.body.style.overflow = '';
+    if (location.hash === AUTO_OPEN_HASH) {
+      history.replaceState(history.state, '', location.pathname + location.search);
+    }
   }
 
   document.addEventListener('click', function (e) {
@@ -55,6 +66,38 @@
 
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !dialog.hidden) closeDialog();
+  });
+
+  // Arriving on the deep link. The browser (native fragment jump) and
+  // site.js (hash-scroll-on-load) would both scroll the page down to the
+  // final CTA section behind the modal. This script runs before site.js and
+  // before the browser's fragment scroll, so the section's id is swapped out
+  // for the duration of the load and put back afterwards: neither finds a
+  // target, and the page stays at the top.
+  var ctaSection = document.getElementById('book-a-call');
+  if (location.hash === AUTO_OPEN_HASH) {
+    if (ctaSection) {
+      var restoreCtaId = function () { ctaSection.id = 'book-a-call'; };
+      ctaSection.id = 'book-a-call-pending';
+      if (document.readyState === 'complete') restoreCtaId();
+      else window.addEventListener('load', function () { setTimeout(restoreCtaId, 0); });
+    }
+    openDialog();
+  }
+
+  // Pasting the link into an already-open tab only changes the hash: the
+  // browser jumps to the CTA section before firing hashchange, so open the
+  // dialog and put the scroll position back where it was. (lastScrollY stops
+  // updating once the hash is set, so it still holds the pre-jump position.)
+  var lastScrollY = window.scrollY;
+  window.addEventListener('scroll', function () {
+    if (location.hash !== AUTO_OPEN_HASH) lastScrollY = window.scrollY;
+  }, { passive: true });
+  window.addEventListener('hashchange', function () {
+    if (location.hash !== AUTO_OPEN_HASH) return;
+    openDialog();
+    window.scrollTo(0, lastScrollY);
+    if (window.__lenis) window.__lenis.scrollTo(lastScrollY, { immediate: true, force: true });
   });
 
   // MailerLite renders its form asynchronously into #booking-form — poll
