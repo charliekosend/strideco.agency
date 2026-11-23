@@ -30,6 +30,44 @@
     });
   }
 
+  // Book a call form (MailerLite A0w2VT): reject personal email domains.
+  // Client-side only; MailerLite has no server-side equivalent for forms.
+  // Capture phase on document so it runs before MailerLite's own handlers.
+  var PERSONAL_EMAIL_DOMAINS = [
+    'gmail.com', 'googlemail.com', 'icloud.com', 'me.com', 'mac.com',
+    'outlook.com', 'outlook.co.uk', 'hotmail.com', 'hotmail.co.uk', 'live.com',
+    'live.co.uk', 'msn.com', 'yahoo.com', 'yahoo.co.uk', 'ymail.com', 'aol.com',
+    'proton.me', 'protonmail.com', 'pm.me', 'gmx.com', 'gmx.co.uk', 'mail.com',
+    'btinternet.com', 'sky.com', 'talktalk.net', 'virginmedia.com'
+  ];
+  var PERSONAL_EMAIL_MESSAGE = 'Please use your work email address. Personal addresses (Gmail, iCloud, etc.) aren’t accepted.';
+
+  function clearPersonalEmailError(form) {
+    var old = form.querySelector('.work-email-error');
+    if (old) old.remove();
+  }
+
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    var host = form && form.closest && form.closest('#booking-form');
+    if (!host || !host.querySelector('[data-form="A0w2VT"]')) return;
+    var emailInput = form.querySelector('input[name="fields[email]"]');
+    if (!emailInput) return;
+    var domain = emailInput.value.trim().toLowerCase().split('@').pop();
+    clearPersonalEmailError(form);
+    if (PERSONAL_EMAIL_DOMAINS.indexOf(domain) === -1) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    var msg = document.createElement('div');
+    msg.className = 'work-email-error';
+    msg.setAttribute('role', 'alert');
+    msg.style.cssText = 'color:#c0392b; font-size:13px; line-height:1.4; margin-top:6px;';
+    msg.textContent = PERSONAL_EMAIL_MESSAGE;
+    (emailInput.closest('.ml-field-group') || emailInput.parentNode).appendChild(msg);
+    emailInput.focus();
+    emailInput.addEventListener('input', function () { clearPersonalEmailError(form); }, { once: true });
+  }, true);
+
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var parallaxTargets = [];
